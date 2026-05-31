@@ -12,8 +12,8 @@ FROM node:${NODE_VERSION}-slim AS node
 
 FROM serversideup/php:${PHP_VERSION}-cli
 
-LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-inertia-base"
-LABEL org.opencontainers.image.description="Laravel + Inertia SSR runtime (serversideup/php cli + node + pdo_pgsql, redis, bcmath)"
+LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-app-base"
+LABEL org.opencontainers.image.description="Laravel Inertia SSR runtime (serversideup/php cli + node + pdo_pgsql, redis, bcmath)"
 
 USER root
 RUN install-php-extensions pdo_pgsql redis bcmath

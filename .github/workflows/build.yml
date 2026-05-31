@@ -18,9 +18,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: laravel-inertia-base
+          - name: laravel-app-base
             dockerfile: Dockerfile
-          - name: laravel-inertia-ssr
+          - name: laravel-app-ssr
             dockerfile: Dockerfile.ssr
     steps:
       - uses: actions/checkout@v4

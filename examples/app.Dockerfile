@@ -14,7 +14,7 @@
 # in a stage that has both PHP and Node. Otherwise `vite build` fails on missing
 # imports. Do not ship without resolving this — it will fail loud at build.
 
-ARG BASE_IMAGE=ghcr.io/kongpda/laravel-inertia-base
+ARG BASE_IMAGE=ghcr.io/kongpda/laravel-app-base
 ARG BASE_TAG=latest
 
 # 1. Frontend assets (vite build && vite build --ssr)
@@ -33,8 +33,8 @@ RUN composer install --no-dev --no-scripts --prefer-dist --no-interaction --opti
 COPY . .
 RUN composer dump-autoload --no-dev --optimize
 
-# 3. Runtime (web / queue / scheduler). For the ssr role swap BASE_IMAGE to
-#    ghcr.io/kongpda/laravel-inertia-ssr and run `php artisan inertia:start-ssr`.
+# 3. Runtime (web / queue / scheduler). For the Inertia ssr role swap BASE_IMAGE
+#    to ghcr.io/kongpda/laravel-app-ssr and run `php artisan inertia:start-ssr`.
 FROM ${BASE_IMAGE}:${BASE_TAG} AS app
 COPY --chown=www-data:www-data . /var/www/html
 COPY --from=vendor --chown=www-data:www-data /app/vendor /var/www/html/vendor

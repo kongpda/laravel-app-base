@@ -1,6 +1,10 @@
 # syntax=docker/dockerfile:1
 #
-# Laravel + Inertia base RUNTIME image — web / queue / scheduler roles.
+# Laravel app base RUNTIME image — Livewire + Inertia web / queue / scheduler roles.
+#
+# Livewire and non-SSR Inertia have identical runtime needs (PHP + fpm-nginx,
+# no node), so they share this one base. Only the Inertia SSR role needs node
+# (see Dockerfile.ssr).
 #
 # Thin layer on top of serversideup/php (production-hardened: PID-1 signal
 # handling, non-root user, healthcheck, opcache, env-driven PHP config).
@@ -11,8 +15,8 @@ ARG PHP_VERSION=8.4
 ARG VARIANT=fpm-nginx
 FROM serversideup/php:${PHP_VERSION}-${VARIANT}
 
-LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-inertia-base"
-LABEL org.opencontainers.image.description="Laravel + Inertia base runtime (serversideup/php + pdo_pgsql, redis, bcmath)"
+LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-app-base"
+LABEL org.opencontainers.image.description="Laravel app base runtime for Livewire + Inertia (serversideup/php + pdo_pgsql, redis, bcmath)"
 
 USER root
 # pdo_pgsql + redis + bcmath required by this stack (see project composer.json ext-*)
