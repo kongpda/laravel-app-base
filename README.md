@@ -60,6 +60,20 @@ COPY --from=assets /app/public/build /var/www/html/public/build
 - **Pin in production.** `8.4-fpm-nginx` floats. Pin to a serversideup release tag
   (or digest) for reproducible builds.
 
+## Security scanning
+
+CI gates every push: a [Trivy](https://github.com/aquasecurity/trivy) secret scan
+of the source, then each image is built and scanned for **fixable** HIGH/CRITICAL
+CVEs **before** it is pushed to GHCR. A finding fails the job and nothing is
+published. Upstream OS CVEs with no fix yet are ignored (`--ignore-unfixed`) so
+releases aren't blocked on things we can't patch.
+
+Run the same checks locally before pushing:
+
+```bash
+./scan.sh        # requires: brew install trivy
+```
+
 ## Build locally
 
 ```bash

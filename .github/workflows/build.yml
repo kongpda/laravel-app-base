@@ -10,7 +10,21 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  # Fail fast on leaked secrets in the source before anything is built.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secret scan (source)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          exit-code: '1'
+
   build:
+    needs: secrets
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,7 +57,33 @@ jobs:
             type=semver,pattern={{version}}
             type=sha,format=short
 
-      - uses: docker/build-push-action@v6
+      # Build to the local daemon (single-arch amd64, so load works). No push yet.
+      - name: Build (load, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          load: true
+          tags: scan-target:${{ matrix.name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Gate: fail (and skip push) on baked secrets or FIXABLE HIGH/CRITICAL CVEs.
+      # ignore-unfixed avoids blocking on upstream OS CVEs that have no fix yet.
+      - name: Scan image (vuln + secret)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: scan-target:${{ matrix.name }}
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      # Scan passed -> push. Layers are cached, so this is near-instant.
+      - name: Push
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
