@@ -17,13 +17,16 @@ Published to GHCR by `.github/workflows/build.yml`:
 
 | Image | Base | Use for | node? |
 |-------|------|---------|-------|
-| `ghcr.io/kongpda/laravel-app-base` | `serversideup/php:8.4-fpm-nginx` | **Livewire** (all roles) **+ Inertia** web / queue / scheduler | ❌ |
-| `ghcr.io/kongpda/laravel-app-ssr` | `serversideup/php:8.4-cli` + Node | **Inertia ssr** role only | ✅ |
+| `ghcr.io/kongpda/laravel-app-base` | `serversideup/php:8.4-fpm-nginx` | **Livewire** + **Inertia without SSR** (all roles) | ❌ |
+| `ghcr.io/kongpda/laravel-app-ssr` | `serversideup/php:8.4-fpm-nginx` + Node | **Inertia with SSR** (all roles) | ✅ |
 
-Why two and not three: Livewire and non-SSR Inertia have identical runtime needs
-(PHP + fpm-nginx, no node), so they share `laravel-app-base`. Only the Inertia
-SSR role runs Node at runtime (`php artisan inertia:start-ssr` boots a Node
-process for the `bootstrap/ssr/ssr.js` bundle).
+Pick **one** image per project — it serves every role.
+[Kamal](https://kamal-deploy.org) shares a single image across all roles (web,
+queue, scheduler, ssr) and just varies the start command, so both images are
+`fpm-nginx` (to serve web). The only difference: `laravel-app-ssr` also bundles
+Node, because the ssr role runs `php artisan inertia:start-ssr`, which boots a
+Node process for the `bootstrap/ssr/ssr.js` bundle. Apps without SSR don't need
+Node, so they use the smaller `laravel-app-base`.
 
 Both images add PHP extensions: `pdo_pgsql`, `redis`, `bcmath`.
 Web root is `/var/www/html/public`. nginx listens on `8080` (non-root).
@@ -41,15 +44,15 @@ COPY --from=vendor /app/vendor /var/www/html/vendor
 COPY --from=assets /app/public/build /var/www/html/public/build
 ```
 
-- **Livewire project**: that's it — no SSR, no extra image.
-- **Inertia + SSR**: also `COPY` `bootstrap/ssr`, and build a second image
-  `FROM ghcr.io/kongpda/laravel-app-ssr` for the ssr role running
-  `php artisan inertia:start-ssr`.
+- **Livewire / Inertia without SSR**: use `laravel-app-base`. One image, all roles.
+- **Inertia with SSR**: use `laravel-app-ssr` instead (same Dockerfile, swap the
+  base), and also `COPY` the `bootstrap/ssr` bundle. The web role serves normally;
+  the ssr role overrides its command to `php artisan inertia:start-ssr`.
 
 ## Gotchas
 
-- **Node is only in the SSR image.** Livewire and web/queue/scheduler don't need
-  it at runtime. Asset *building* happens in a separate Bun stage (see example).
+- **Node only ships in `laravel-app-ssr`.** Use `laravel-app-base` when there's no
+  SSR. Asset *building* always happens in a separate Bun stage (see example).
 - **Inertia Wayfinder needs PHP at build time.** `bun run build` → `prebuild` →
   `wayfinder:generate` calls `php artisan`. The pure-Bun build stage has no PHP,
   so either commit the generated `@/actions` / `@/routes` files, or generate them

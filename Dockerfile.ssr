@@ -1,22 +1,33 @@
 # syntax=docker/dockerfile:1
 #
-# Laravel + Inertia SSR RUNTIME image — ssr role only.
+# Laravel app base for Inertia projects that use SSR.
 #
-# Same serversideup PHP base as the main image, PLUS the Node binary.
-# `php artisan inertia:start-ssr` boots a Node process that runs the
-# built bootstrap/ssr/ssr.js bundle, so this role needs BOTH php and node.
-# Web / queue / scheduler roles do NOT need node — use the main Dockerfile.
+# fpm-nginx (same web server as laravel-app-base) PLUS the Node binary, so a
+# SINGLE image covers every Kamal role of an SSR app: web serves over nginx,
+# the ssr role runs `php artisan inertia:start-ssr` (which boots Node on the
+# bootstrap/ssr/ssr.js bundle), and queue/scheduler run their php commands.
+# Kamal shares one image across all roles, so the web role needs nginx AND the
+# ssr role needs node — both live here.
+#
+# Livewire and non-SSR Inertia apps don't need Node: use laravel-app-base.
 ARG PHP_VERSION=8.4
+ARG VARIANT=fpm-nginx
 ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-slim AS node
 
-FROM serversideup/php:${PHP_VERSION}-cli
+FROM serversideup/php:${PHP_VERSION}-${VARIANT}
 
 LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-app-base"
-LABEL org.opencontainers.image.description="Laravel Inertia SSR runtime (serversideup/php cli + node + pdo_pgsql, redis, bcmath)"
+LABEL org.opencontainers.image.description="Laravel Inertia+SSR runtime (serversideup/php fpm-nginx + node + pdo_pgsql, redis, bcmath)"
 
 USER root
 RUN install-php-extensions pdo_pgsql redis bcmath
+# Layer Debian security updates on top of the upstream base, and drop the
+# kernel-header dev packages (build-only leftovers, unused at runtime).
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get purge -y linux-libc-dev \
+ && rm -rf /var/lib/apt/lists/*
 # Node runtime for Inertia SSR. Both images are debian/glibc, so the binary
 # copies cleanly. If a future node needs more shared libs, install via
 # nodesource instead of copying the binary.
