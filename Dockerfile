@@ -21,11 +21,12 @@ LABEL org.opencontainers.image.description="Laravel app base runtime for Livewir
 USER root
 # pdo_pgsql + redis + bcmath required by this stack (see project composer.json ext-*)
 RUN install-php-extensions pdo_pgsql redis bcmath
-# Layer Debian security updates on top of the upstream base, and drop the
-# kernel-header dev packages (build-only leftovers, unused at runtime — a
-# container uses the host kernel, so they only add un-actionable scanner noise).
+# Layer Debian security updates, install postgresql-client (pg_dump — needed for
+# spatie/laravel-backup DB dumps), and drop the kernel-header dev packages
+# (build-only leftovers, unused at runtime — only add un-actionable scanner noise).
 RUN apt-get update \
  && apt-get upgrade -y \
+ && apt-get install -y --no-install-recommends postgresql-client \
  && apt-get purge -y linux-libc-dev \
  && rm -rf /var/lib/apt/lists/*
 USER www-data

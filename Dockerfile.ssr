@@ -22,10 +22,11 @@ LABEL org.opencontainers.image.description="Laravel Inertia+SSR runtime (servers
 
 USER root
 RUN install-php-extensions pdo_pgsql redis bcmath
-# Layer Debian security updates on top of the upstream base, and drop the
-# kernel-header dev packages (build-only leftovers, unused at runtime).
+# Layer Debian security updates, install postgresql-client (pg_dump — needed for
+# spatie/laravel-backup DB dumps), and drop the kernel-header dev packages.
 RUN apt-get update \
  && apt-get upgrade -y \
+ && apt-get install -y --no-install-recommends postgresql-client \
  && apt-get purge -y linux-libc-dev \
  && rm -rf /var/lib/apt/lists/*
 # Node runtime for Inertia SSR. Both images are debian/glibc, so the binary
