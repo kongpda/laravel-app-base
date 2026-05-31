@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+#
+# Laravel + Inertia SSR RUNTIME image — ssr role only.
+#
+# Same serversideup PHP base as the main image, PLUS the Node binary.
+# `php artisan inertia:start-ssr` boots a Node process that runs the
+# built bootstrap/ssr/ssr.js bundle, so this role needs BOTH php and node.
+# Web / queue / scheduler roles do NOT need node — use the main Dockerfile.
+ARG PHP_VERSION=8.4
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}-slim AS node
+
+FROM serversideup/php:${PHP_VERSION}-cli
+
+LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-inertia-base"
+LABEL org.opencontainers.image.description="Laravel + Inertia SSR runtime (serversideup/php cli + node + pdo_pgsql, redis, bcmath)"
+
+USER root
+RUN install-php-extensions pdo_pgsql redis bcmath
+# Node runtime for Inertia SSR. Both images are debian/glibc, so the binary
+# copies cleanly. If a future node needs more shared libs, install via
+# nodesource instead of copying the binary.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+USER www-data
+
+RUN node --version
