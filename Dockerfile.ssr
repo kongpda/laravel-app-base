@@ -21,7 +21,7 @@ LABEL org.opencontainers.image.source="https://github.com/kongpda/laravel-app-ba
 LABEL org.opencontainers.image.description="Laravel Inertia+SSR runtime (serversideup/php fpm-nginx + node + pdo_pgsql, redis, bcmath)"
 
 USER root
-RUN install-php-extensions pdo_pgsql redis bcmath
+RUN install-php-extensions pdo_pgsql redis bcmath intl
 # Layer Debian security updates, install postgresql-client (pg_dump — needed for
 # spatie/laravel-backup DB dumps), and drop the kernel-header dev packages.
 RUN apt-get update \
