@@ -5,6 +5,10 @@ on:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
+  schedule:
+    # Weekly rebuild (Mon 06:00 UTC) to pull upstream serversideup + Debian
+    # security updates and re-run the Trivy scan gate, so the base doesn't drift.
+    - cron: '0 6 * * 1'
 
 env:
   REGISTRY: ghcr.io
